@@ -12,18 +12,29 @@ class Loop;
 template<typename T>
 class Task : public RawTask {
 public:
-    using return_type = T;
+    using return_type = typename std::conditional<std::negation<std::is_void<T>>::value, T, std::nullptr_t>::type;
 
     template<typename F, typename ...Args>
     Task(F f, Args... args) :
         RawTask([] (void *fargs) -> void * {
             auto funcargs = reinterpret_cast<std::pair<F, std::tuple<Task<T> *, Args...>> *>(fargs);
 
-            auto ret = std::apply(std::move(std::get<0>(*funcargs)),
-                                  std::move(std::get<1>(*funcargs)));
-            delete funcargs;
+            void *retp = nullptr;
 
-            return reinterpret_cast<void *>(new return_type(std::move(ret)));
+            if constexpr (std::is_void<T>::value) {
+                std::apply(std::move(std::get<0>(*funcargs)),
+                                     std::move(std::get<1>(*funcargs)));
+
+                retp = nullptr;
+            } else {
+                auto ret = std::apply(std::move(std::get<0>(*funcargs)),
+                                      std::move(std::get<1>(*funcargs)));
+
+                retp = reinterpret_cast<void *>(new return_type(std::move(ret)));
+            }
+
+            delete funcargs;
+            return retp;
         },
         reinterpret_cast<void *>(new std::pair<F, std::tuple<Task<T> *, Args...>>(f, {this, std::move(args)...})))
     {
@@ -35,11 +46,22 @@ public:
         RawTask(loop, [] (void *fargs) -> void * {
             auto funcargs = reinterpret_cast<std::pair<F, std::tuple<Task<T> *, Args...>> *>(fargs);
 
-            auto ret = std::apply(std::move(std::get<0>(*funcargs)),
-                                  std::move(std::get<1>(*funcargs)));
+            void *retp = nullptr;
+
+            if constexpr (std::is_void<T>::value) {
+                std::apply(std::move(std::get<0>(*funcargs)),
+                                     std::move(std::get<1>(*funcargs)));
+
+                retp = nullptr;
+            } else {
+                auto ret = std::apply(std::move(std::get<0>(*funcargs)),
+                                      std::move(std::get<1>(*funcargs)));
+
+                retp = reinterpret_cast<void *>(new return_type(std::move(ret)));
+            }
             delete funcargs;
 
-            return reinterpret_cast<void *>(new return_type(std::move(ret)));
+            return retp;
         },
         reinterpret_cast<void *>(new std::pair<F, std::tuple<Task<T> *, Args...>>(f, {this, std::move(args)...})))
     {
