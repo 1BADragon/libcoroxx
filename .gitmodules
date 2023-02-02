@@ -1,0 +1,3 @@
+[submodule "deps/libcoro"]
+	path = deps/libcoro
+	url = ../libcoro
