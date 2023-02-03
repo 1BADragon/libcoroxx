@@ -3,6 +3,8 @@ project(libcoroxx C CXX)
 
 option(BUILD_TESTS "Build testing code" ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_subdirectory(deps/libcoro)
 
 set(libcoroxx_SRCS
@@ -13,7 +15,6 @@ set(libcoroxx_SRCS
 
     include/coro/queue.hpp
     include/coro/task.hpp
-    include/coro/coro_inner.hpp
 )
 
 add_library(coroxx STATIC ${libcoroxx_SRCS})
